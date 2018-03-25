@@ -89,20 +89,20 @@ func New(opts *Options) *NSQD {
 		optsNotificationChan: make(chan struct{}, 1),
 		dl:                   dirlock.New(dataPath),
 	}
-	httpcli := http_api.NewClient(nil, opts.HTTPClientConnectTimeout, opts.HTTPClientRequestTimeout)
-	n.ci = clusterinfo.New(n.logf, httpcli)
+	httpcli := http_api.NewClient(nil, opts.HTTPClientConnectTimeout, opts.HTTPClientRequestTimeout)  // 返回一个http对象
+	n.ci = clusterinfo.New(n.logf, httpcli)   // 传一个log，一个http对象；做啥用的等看到再说
 
-	n.swapOpts(opts)
-	n.errValue.Store(errStore{})
+	n.swapOpts(opts)   //  把配置传到opts？？
+	n.errValue.Store(errStore{})  // 一个原子操作？？
 
 	var err error
-	opts.logLevel, err = lg.ParseLogLevel(opts.LogLevel, opts.Verbose)
+	opts.logLevel, err = lg.ParseLogLevel(opts.LogLevel, opts.Verbose)   // 初始化log
 	if err != nil {
 		n.logf(LOG_FATAL, "%s", err)
 		os.Exit(1)
 	}
 
-	err = n.dl.Lock()
+	err = n.dl.Lock()   // 看起来是个文件夹锁，path to store disk-backed messages，这个应该是存消息的文件夹，落盘的配置
 	if err != nil {
 		n.logf(LOG_FATAL, "--data-path=%s in use (possibly by another instance of nsqd)", dataPath)
 		os.Exit(1)

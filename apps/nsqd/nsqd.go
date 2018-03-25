@@ -74,7 +74,7 @@ func (t *tlsMinVersionOption) String() string {
 }
 
 func nsqdFlagSet(opts *nsqd.Options) *flag.FlagSet {
-	flagSet := flag.NewFlagSet("nsqd", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("nsqd", flag.ExitOnError)  // 读参数并且格式化一个功能
 
 	// basic options
 	flagSet.Bool("version", false, "print version string")
@@ -181,9 +181,10 @@ type program struct {
 	nsqd *nsqd.NSQD
 }
 
-func main() {
-	prg := &program{}
-	if err := svc.Run(prg, syscall.SIGINT, syscall.SIGTERM); err != nil {
+func main() {    
+	prg := &program{}   
+	//  svc是一个程序员运行和停止控制的程序，监听系统信号  借口对象要有Init Start Stop函数实现
+	if err := svc.Run(prg, syscall.SIGINT, syscall.SIGTERM); err != nil {  
 		log.Fatal(err)
 	}
 }
@@ -197,30 +198,30 @@ func (p *program) Init(env svc.Environment) error {
 }
 
 func (p *program) Start() error {
-	opts := nsqd.NewOptions()
+	opts := nsqd.NewOptions() // 可以用包名直接调用，一个package下应该是不能重名的
 
-	flagSet := nsqdFlagSet(opts)
-	flagSet.Parse(os.Args[1:])
+	flagSet := nsqdFlagSet(opts)   // 将配置参数搞成一个对象以后用这个对象处理传入参数
+	flagSet.Parse(os.Args[1:])  // 除了第一个参数外处理
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	if flagSet.Lookup("version").Value.(flag.Getter).Get().(bool) {
+	if flagSet.Lookup("version").Value.(flag.Getter).Get().(bool) {  // 找version
 		fmt.Println(version.String("nsqd"))
 		os.Exit(0)
 	}
 
-	var cfg config
-	configFile := flagSet.Lookup("config").Value.String()
+	var cfg config  // map
+	configFile := flagSet.Lookup("config").Value.String()   // config file
 	if configFile != "" {
-		_, err := toml.DecodeFile(configFile, &cfg)
+		_, err := toml.DecodeFile(configFile, &cfg)   //  解析config file
 		if err != nil {
 			log.Fatalf("ERROR: failed to load config file %s - %s", configFile, err.Error())
 		}
 	}
 	cfg.Validate()
 
-	options.Resolve(opts, flagSet, cfg)
-	nsqd := nsqd.New(opts)
+	options.Resolve(opts, flagSet, cfg)   // 应该是把配置转成map类型
+	nsqd := nsqd.New(opts)  // 初始化对象根据配置文件
 
 	err := nsqd.LoadMetadata()
 	if err != nil {
